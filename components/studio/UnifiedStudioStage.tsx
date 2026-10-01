@@ -237,11 +237,9 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
 
   return (
     <div className="relative w-full flex flex-col items-center pt-2 sm:pt-4 pb-20 px-4 sm:px-6 hero-radial-glow overflow-x-hidden">
-      {/* Stage 1 & 2: Large Cinematic Hero AI Image for Image Studio */}
+      {/* Stage 1 & 2: Large Cinematic Hero AI Showcase Carousel for Image Studio */}
       {studioType === "image" && (
         <CinematicImageHero
-          imageSrc="/images/hero-neural-art.jpg"
-          imageAlt="Aether Neural Studio AI-Generated Fine Artwork"
           onUsePrompt={(loadedPrompt) => {
             setPrompt(loadedPrompt);
             studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
