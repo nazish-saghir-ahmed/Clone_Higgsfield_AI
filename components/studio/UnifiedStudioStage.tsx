@@ -8,6 +8,7 @@ import { FourWheelRig } from "@/components/cinema/FourWheelRig";
 import { MotionBrushCanvas } from "@/components/canvas/MotionBrushCanvas";
 import { LightboxModal } from "@/components/shared/LightboxModal";
 import BorderGlow from "@/components/BorderGlow";
+import { CinematicImageHero } from "@/components/hero/CinematicImageHero";
 import { STYLE_PRESETS, applyStylePreset, StylePreset } from "@/lib/prompt-compiler";
 import { submitGenerativeJob, executePollingLoop } from "@/lib/api-client";
 import { normalizeOutputUrl } from "@/lib/url-normalizer";
@@ -75,6 +76,7 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const abortControllerRef = useRef<AbortController | null>(null);
+  const studioCardRef = useRef<HTMLDivElement>(null);
 
   // Active Output Viewport
   const [outputUrl, setOutputUrl] = useState<string | null>(null);
@@ -234,9 +236,26 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
   const isVideoOutput = studioType === "video" || studioType === "lipsync" || (outputUrl && outputUrl.endsWith(".mp4"));
 
   return (
-    <div className="relative w-full flex flex-col items-center pt-10 pb-20 px-4 sm:px-6 hero-radial-glow">
-      {/* 1. Top Futuristic Engine Pill Badge */}
-      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] shadow-sm mb-6 backdrop-blur-md">
+    <div className="relative w-full flex flex-col items-center pt-2 sm:pt-4 pb-20 px-4 sm:px-6 hero-radial-glow overflow-x-hidden">
+      {/* Stage 1 & 2: Large Cinematic Hero AI Image for Image Studio */}
+      {studioType === "image" && (
+        <CinematicImageHero
+          imageSrc="/images/hero-neural-art.jpg"
+          imageAlt="Aether Neural Studio AI-Generated Fine Artwork"
+          onUsePrompt={(loadedPrompt) => {
+            setPrompt(loadedPrompt);
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+          onScrollToStudio={() => {
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
+
+      {/* Stage 3: Product Typography & Synthesis Studio */}
+      <div ref={studioCardRef} className="w-full flex flex-col items-center pt-4 sm:pt-8 scroll-mt-20">
+        {/* 1. Top Futuristic Engine Pill Badge */}
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] shadow-sm mb-6 backdrop-blur-md">
         <span className="relative flex w-2 h-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
           <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
@@ -556,6 +575,7 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
         <span>Resolution: {resolution}</span>
         <span className="text-slate-600">/</span>
         <span className="text-accent-cyan/90 font-medium">Ready for Synthesis</span>
+      </div>
       </div>
 
       {/* 5. Active Output Showcase Viewport */}
