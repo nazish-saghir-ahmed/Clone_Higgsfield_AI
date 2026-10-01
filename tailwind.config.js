@@ -8,15 +8,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#06070a",
+        background: "#050609",
         surface: {
-          DEFAULT: "#0f111a",
-          elevated: "#161926",
+          DEFAULT: "#0d101a",
+          elevated: "#141826",
           glass: "rgba(255, 255, 255, 0.035)",
         },
         border: {
-          subtle: "rgba(255, 255, 255, 0.07)",
-          prominent: "rgba(255, 255, 255, 0.14)",
+          subtle: "rgba(255, 255, 255, 0.06)",
+          prominent: "rgba(255, 255, 255, 0.12)",
           focus: "#00dbe9",
         },
         accent: {
@@ -35,9 +35,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "sans-serif"],
-        mono: ["var(--font-jetbrains)", "JetBrains Mono", "monospace"],
-        display: ["var(--font-syne)", "Syne", "sans-serif"],
+        sans: ["var(--font-sans)", "Plus Jakarta Sans", "Inter", "sans-serif"],
+        serif: ["var(--font-serif)", "Playfair Display", "Georgia", "serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
       keyframes: {
         laserFlow: {
@@ -45,17 +45,14 @@ module.exports = {
           "50%": { backgroundPosition: "100% 50%" },
           "100%": { backgroundPosition: "0% 50%" },
         },
-        glowPulse: {
+        pulseGlow: {
           "0%, 100%": { opacity: "0.4" },
-          "50%": { opacity: "0.8" },
+          "50%": { opacity: "0.9" },
         },
       },
       animation: {
         "laser-flow": "laserFlow 3s ease infinite",
-        "glow-pulse": "glowPulse 2s ease-in-out infinite",
-      },
-      backdropBlur: {
-        xs: "2px",
+        "pulse-glow": "pulseGlow 2.5s ease-in-out infinite",
       },
     },
   },

@@ -1,0 +1,560 @@
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import { Sparkles, Wand2, Mic, MicOff, Download, Maximize2, RefreshCw, Layers, Film, Clapperboard, Music, Video, User, Sliders, ArrowRight, AlertCircle, Compass, Paintbrush } from "lucide-react";
+import { ReferenceTray } from "@/components/image/ReferenceTray";
+import { UploadDropzone } from "@/components/shared/UploadDropzone";
+import { FourWheelRig } from "@/components/cinema/FourWheelRig";
+import { MotionBrushCanvas } from "@/components/canvas/MotionBrushCanvas";
+import { LightboxModal } from "@/components/shared/LightboxModal";
+import { STYLE_PRESETS, applyStylePreset, StylePreset } from "@/lib/prompt-compiler";
+import { submitGenerativeJob, executePollingLoop } from "@/lib/api-client";
+import { normalizeOutputUrl } from "@/lib/url-normalizer";
+import { addHistoryItem } from "@/lib/storage";
+import { AspectRatio, GenerationHistoryItem, MotionMode, MotionVector, NeuralModelDefinition, Resolution, StudioCategory, UploadedAssetRecord, VideoDuration } from "@/lib/types";
+import { downloadMediaAsset } from "@/lib/utils";
+
+interface UnifiedStudioStageProps {
+  studioType: "image" | "video" | "lipsync" | "cinema";
+  engineBadge: string;
+  headlineMain: string;
+  headlineEmphasis: string; // The italic serif word
+  headlineSuffix: string;
+  subtitle: string;
+  placeholderText: string;
+  models: NeuralModelDefinition[];
+  defaultModelId: string;
+}
+
+export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
+  studioType,
+  engineBadge,
+  headlineMain,
+  headlineEmphasis,
+  headlineSuffix,
+  subtitle,
+  placeholderText,
+  models,
+  defaultModelId,
+}) => {
+  const [selectedModelId, setSelectedModelId] = useState(defaultModelId);
+  const activeModel = models.find((m) => m.id === selectedModelId) || models[0];
+
+  // Prompt Inputs
+  const [prompt, setPrompt] = useState("");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
+  const [resolution, setResolution] = useState<Resolution>("1K");
+  const [duration, setDuration] = useState<VideoDuration>(5);
+  const [motionMode, setMotionMode] = useState<MotionMode>("normal");
+
+  // Media Inputs
+  const [referenceImages, setReferenceImages] = useState<UploadedAssetRecord[]>([]);
+  const [startFrameAsset, setStartFrameAsset] = useState<UploadedAssetRecord | null>(null);
+  const [visualAsset, setVisualAsset] = useState<UploadedAssetRecord | null>(null);
+  const [audioAsset, setAudioAsset] = useState<UploadedAssetRecord | null>(null);
+
+  // Cinema compiled prompt
+  const [compiledCinemaPrompt, setCompiledCinemaPrompt] = useState("");
+
+  // Motion Brush
+  const [isBrushModalOpen, setIsBrushModalOpen] = useState(false);
+  const [motionTrajectory, setMotionTrajectory] = useState<{
+    maskDataUrl: string;
+    vector: MotionVector;
+  } | null>(null);
+
+  // Web Speech API
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // Generation & Polling State
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusText, setStatusText] = useState("Ready for synthesis");
+  const [progress, setProgress] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Active Output Viewport
+  const [outputUrl, setOutputUrl] = useState<string | null>(null);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setPrompt((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleSpeech = () => {
+    if (!recognitionRef.current) {
+      alert("Web Speech API is not supported in this browser.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const handleApplyPreset = (preset: StylePreset) => {
+    setPrompt((prev) => applyStylePreset(prev, preset));
+  };
+
+  const handleGenerate = async () => {
+    const finalPrompt = studioType === "cinema" ? compiledCinemaPrompt : prompt;
+
+    if (studioType === "image" && referenceImages.length === 0 && !prompt.trim()) {
+      setErrorMessage("Please enter a prompt to generate an image.");
+      return;
+    }
+    if (studioType === "video" && !startFrameAsset && !prompt.trim()) {
+      setErrorMessage("Please enter a motion description or upload a start frame.");
+      return;
+    }
+    if (studioType === "lipsync" && (!visualAsset || !audioAsset)) {
+      setErrorMessage("Please upload both a portrait visual asset and a speech audio track.");
+      return;
+    }
+
+    setErrorMessage("");
+    setIsGenerating(true);
+    setProgress(0.05);
+    setStatusText("Initializing neural job...");
+    setElapsedSeconds(0);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      const payload: any = {
+        prompt: finalPrompt || "Neural synthesis render",
+        aspect_ratio: aspectRatio,
+        resolution: resolution,
+        duration: duration,
+        mode: motionMode,
+      };
+
+      if (studioType === "image" && referenceImages.length > 0) {
+        if (activeModel.inputs.imageField === "images_list") {
+          payload.images_list = referenceImages.map((r) => r.uploadedUrl);
+        } else {
+          payload.image_url = referenceImages[0]?.uploadedUrl;
+        }
+      }
+
+      if (studioType === "video" && startFrameAsset) {
+        payload.image_url = startFrameAsset.uploadedUrl;
+        if (motionTrajectory) {
+          payload.motion_trajectories = [
+            {
+              mask_url: motionTrajectory.maskDataUrl,
+              dx: motionTrajectory.vector.dx,
+              dy: motionTrajectory.vector.dy,
+              intensity: motionTrajectory.vector.intensity,
+            },
+          ];
+        }
+      }
+
+      if (studioType === "lipsync") {
+        payload.audio_url = audioAsset?.uploadedUrl;
+        if (activeModel.inputs.videoField) {
+          payload.video_url = visualAsset?.uploadedUrl;
+        } else {
+          payload.image_url = visualAsset?.uploadedUrl;
+        }
+      }
+
+      // Step 1: Submit to Gateway
+      const submission = await submitGenerativeJob(activeModel.endpoint, payload);
+      setStatusText(`Synthesizing (${submission.request_id.substring(0, 8)})...`);
+
+      // Step 2: Polling loop
+      const result = await executePollingLoop(submission.request_id, {
+        intervalMs: 2000,
+        signal: abortController.signal,
+        onProgress: (status, prog, elapsed) => {
+          setStatusText(`Synthesizing (${status})...`);
+          setProgress(prog);
+          setElapsedSeconds(elapsed);
+        },
+      });
+
+      // Step 3: Extract & normalize URL
+      const finalUrl = normalizeOutputUrl(result);
+      if (!finalUrl) {
+        throw new Error("Unable to parse output media URL from gateway.");
+      }
+
+      setOutputUrl(finalUrl);
+      setStatusText("Synthesis complete!");
+      setProgress(1.0);
+
+      // Step 4: Persist to History
+      const isVideo = studioType === "video" || studioType === "lipsync" || finalUrl.endsWith(".mp4");
+      const historyItem: GenerationHistoryItem = {
+        id: `hist_${Date.now()}`,
+        requestId: submission.request_id,
+        studioType: studioType,
+        modelId: activeModel.id,
+        modelName: activeModel.name,
+        prompt: finalPrompt,
+        outputUrl: finalUrl,
+        thumbnailUrl: finalUrl,
+        mediaType: isVideo ? "video" : "image",
+        aspectRatio,
+        resolution,
+        executionSeconds: elapsedSeconds,
+        timestamp: new Date().toISOString(),
+      };
+      addHistoryItem(historyItem);
+    } catch (err: any) {
+      if (err.message === "ABORTED") {
+        setStatusText("Generation canceled.");
+      } else {
+        console.error("Synthesis error:", err);
+        setErrorMessage(err.message || "Synthesis failed.");
+        setStatusText("Synthesis failed.");
+      }
+    } finally {
+      setIsGenerating(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const isVideoOutput = studioType === "video" || studioType === "lipsync" || (outputUrl && outputUrl.endsWith(".mp4"));
+
+  return (
+    <div className="relative w-full flex flex-col items-center pt-8 pb-20 px-4 sm:px-6 hero-radial-glow">
+      {/* 1. Top Futuristic Engine Pill Badge */}
+      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-sm mb-6 backdrop-blur-md">
+        <span className="relative flex w-2 h-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
+          <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
+        </span>
+        <span className="text-[11px] font-mono tracking-widest text-slate-300 uppercase font-medium">
+          {engineBadge}
+        </span>
+      </div>
+
+      {/* 2. Large Centered Hero Title (80-110px with Serif Italic Emphasis) */}
+      <div className="text-center max-w-4xl mx-auto mb-4 select-none">
+        <h1 className="text-5xl sm:text-7xl lg:text-[88px] font-extrabold tracking-tight text-white leading-[1.05] font-sans">
+          {headlineMain}
+          <br className="hidden sm:inline" />
+          <span className="font-serif italic font-normal text-slate-100 tracking-normal px-2">
+            {headlineEmphasis}
+          </span>
+          {headlineSuffix}
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-5 text-sm sm:text-base text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
+          {subtitle}
+        </p>
+      </div>
+
+      {/* 3. Main Input / Creation Panel */}
+      <div className="w-full max-w-3xl mt-4 creation-panel-white p-5 sm:p-7 text-slate-900 shadow-2xl relative transition-all duration-300">
+        {/* Multiline Textarea Input */}
+        <div className="relative">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder={placeholderText}
+            rows={3}
+            className="w-full bg-transparent text-sm sm:text-base text-slate-800 placeholder:text-slate-400 border-none outline-none resize-none leading-relaxed font-sans"
+          />
+
+          {/* Voice Dictation Button */}
+          <button
+            type="button"
+            onClick={toggleSpeech}
+            className={`absolute top-0 right-0 p-2 rounded-full transition-colors ${
+              isListening ? "bg-red-50 text-red-500 animate-pulse" : "text-slate-400 hover:text-slate-700"
+            }`}
+            title="Voice Dictation"
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Studio-Specific Additions inside the Card */}
+        {studioType === "image" && (
+          <div className="pt-3 border-t border-slate-100 mt-2">
+            <ReferenceTray
+              selectedAssets={referenceImages}
+              maxSlots={activeModel.inputs.maxImages || 14}
+              onSelectionChange={(assets) => setReferenceImages(assets)}
+            />
+          </div>
+        )}
+
+        {studioType === "video" && (
+          <div className="pt-3 border-t border-slate-100 mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-600">Start Frame:</span>
+              {startFrameAsset ? (
+                <div className="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-lg">
+                  <img src={startFrameAsset.thumbnail} alt="Frame" className="w-6 h-6 rounded object-cover" />
+                  <span className="text-xs text-slate-700 font-medium truncate max-w-[120px]">{startFrameAsset.name}</span>
+                  <button onClick={() => setStartFrameAsset(null)} className="text-xs text-slate-400 hover:text-red-500">×</button>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400 italic">None (T2V Direct)</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                <span>Upload Frame</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const { uploadMediaFile } = await import("@/lib/api-client");
+                      const { generateSquareThumbnail } = await import("@/lib/thumbnail");
+                      const thumb = await generateSquareThumbnail(file);
+                      const res = await uploadMediaFile(file);
+                      setStartFrameAsset({
+                        id: `asset_${Date.now()}`,
+                        name: file.name,
+                        uploadedUrl: res.url,
+                        thumbnail: thumb,
+                        timestamp: new Date().toISOString(),
+                      });
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              {startFrameAsset && (
+                <button
+                  type="button"
+                  onClick={() => setIsBrushModalOpen(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors shadow-sm"
+                >
+                  <Paintbrush className="w-3 h-3 text-accent-cyan" />
+                  <span>{motionTrajectory ? "Edit Motion Brush" : "Motion Brush"}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {studioType === "lipsync" && (
+          <div className="pt-3 border-t border-slate-100 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <span className="block text-xs font-semibold text-slate-600 mb-1">Visual Target:</span>
+              {visualAsset ? (
+                <div className="flex items-center justify-between bg-slate-100 p-2 rounded-xl">
+                  <span className="text-xs text-slate-700 font-medium truncate">{visualAsset.name}</span>
+                  <button onClick={() => setVisualAsset(null)} className="text-xs text-slate-400 hover:text-red-500">×</button>
+                </div>
+              ) : (
+                <UploadDropzone
+                  accept="image/*,video/*"
+                  maxFiles={1}
+                  onAssetUploaded={(a) => setVisualAsset(a)}
+                  className="p-3 border-slate-200"
+                />
+              )}
+            </div>
+
+            <div>
+              <span className="block text-xs font-semibold text-slate-600 mb-1">Audio Track:</span>
+              {audioAsset ? (
+                <div className="flex items-center justify-between bg-slate-100 p-2 rounded-xl">
+                  <span className="text-xs text-slate-700 font-medium truncate">{audioAsset.name}</span>
+                  <button onClick={() => setAudioAsset(null)} className="text-xs text-slate-400 hover:text-red-500">×</button>
+                </div>
+              ) : (
+                <UploadDropzone
+                  accept="audio/*"
+                  maxFiles={1}
+                  onAssetUploaded={(a) => setAudioAsset(a)}
+                  className="p-3 border-slate-200"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {studioType === "cinema" && (
+          <div className="pt-3 border-t border-slate-100 mt-2">
+            <FourWheelRig
+              basePrompt={prompt}
+              onCompiledPromptChange={(comp) => setCompiledCinemaPrompt(comp)}
+            />
+          </div>
+        )}
+
+        {/* Bottom Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-3 border-t border-slate-100">
+          {/* Left Controls: Model & Aspect Selection */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Model Selector Pill */}
+            <select
+              value={selectedModelId}
+              onChange={(e) => setSelectedModelId(e.target.value)}
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-full focus:outline-none focus:border-slate-400 cursor-pointer"
+            >
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Aspect Ratio Selector */}
+            {activeModel.inputs.aspect_ratio && (
+              <select
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
+                className="px-3 py-1.5 text-xs font-mono font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-full focus:outline-none"
+              >
+                {(activeModel.inputs.supported_aspect_ratios || ["16:9", "9:16", "1:1"]).map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Duration Selector for Video */}
+            {activeModel.inputs.duration && (
+              <select
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value) as VideoDuration)}
+                className="px-3 py-1.5 text-xs font-mono font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-full focus:outline-none"
+              >
+                {(activeModel.inputs.supported_durations || [5, 10]).map((d) => (
+                  <option key={d} value={d}>
+                    {d}s Duration
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Right Action: Generate Button */}
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#050609] hover:bg-slate-800 text-white font-semibold text-xs transition-all shadow-md active:scale-95 disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-accent-cyan" />
+                <span>Generating ({Math.round(progress * 100)}%)...</span>
+              </>
+            ) : (
+              <>
+                <span>Create</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Error message */}
+        {errorMessage && (
+          <div className="mt-3 p-2.5 rounded-xl bg-red-50 text-red-600 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Active Output Showcase Viewport */}
+      {outputUrl && (
+        <div className="w-full max-w-4xl mt-12 studio-glass-panel p-6 flex flex-col items-center justify-center animate-fadeIn">
+          <div className="relative group max-w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black flex items-center justify-center">
+            {isVideoOutput ? (
+              <video
+                src={outputUrl}
+                controls
+                autoPlay
+                loop
+                playsInline
+                className="max-h-[65vh] w-auto rounded-2xl"
+              />
+            ) : (
+              <img
+                src={outputUrl}
+                alt="Aether Neural Render"
+                className="max-h-[65vh] w-auto rounded-2xl object-contain"
+              />
+            )}
+
+            {/* Floating Action Buttons */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => setIsLightboxOpen(true)}
+                className="p-2.5 rounded-xl bg-black/70 backdrop-blur-md text-white hover:bg-black/90 transition-colors shadow-lg border border-white/10"
+                title="Zoom Fullscreen"
+              >
+                <Maximize2 className="w-4 h-4 text-accent-cyan" />
+              </button>
+              <button
+                onClick={() => downloadMediaAsset(outputUrl, isVideoOutput ? "aether-video.mp4" : "aether-render.png")}
+                className="p-2.5 rounded-xl bg-accent-cyan text-black hover:bg-accent-cyan/90 transition-colors shadow-lg font-bold"
+                title="Download 4K Media"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Motion Brush Overlay */}
+      {isBrushModalOpen && startFrameAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-4xl">
+            <MotionBrushCanvas
+              backgroundImageUrl={startFrameAsset.uploadedUrl}
+              onApplyTrajectory={(maskDataUrl, vec) => {
+                setMotionTrajectory({ maskDataUrl, vector: vec });
+                setIsBrushModalOpen(false);
+              }}
+              onCancel={() => setIsBrushModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {outputUrl && (
+        <LightboxModal
+          isOpen={isLightboxOpen}
+          onClose={() => setIsLightboxOpen(false)}
+          mediaUrl={outputUrl}
+          mediaType={isVideoOutput ? "video" : "image"}
+          prompt={studioType === "cinema" ? compiledCinemaPrompt : prompt}
+          modelName={activeModel.name}
+        />
+      )}
+    </div>
+  );
+};
