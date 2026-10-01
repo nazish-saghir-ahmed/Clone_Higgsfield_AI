@@ -7,6 +7,7 @@ import { UploadDropzone } from "@/components/shared/UploadDropzone";
 import { FourWheelRig } from "@/components/cinema/FourWheelRig";
 import { MotionBrushCanvas } from "@/components/canvas/MotionBrushCanvas";
 import { LightboxModal } from "@/components/shared/LightboxModal";
+import BorderGlow from "@/components/BorderGlow";
 import { STYLE_PRESETS, applyStylePreset, StylePreset } from "@/lib/prompt-compiler";
 import { submitGenerativeJob, executePollingLoop } from "@/lib/api-client";
 import { normalizeOutputUrl } from "@/lib/url-normalizer";
@@ -263,9 +264,21 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
       </div>
 
       {/* 3. Main Focused Creation / Input Panel */}
-      <div className="w-full max-w-3xl mt-6 rounded-[28px] bg-[#0c0f1d]/90 border border-white/[0.08] p-5 sm:p-6 text-white shadow-2xl backdrop-blur-2xl relative transition-all duration-300 hover:border-white/[0.12] focus-within:border-accent-cyan/40 focus-within:shadow-[0_0_30px_rgba(0,219,233,0.1)]">
-        {/* Multiline Textarea Input */}
-        <div className="relative mb-3">
+      <BorderGlow
+        edgeSensitivity={30}
+        glowColor="40 80 80"
+        backgroundColor="#120F17"
+        borderRadius={28}
+        glowRadius={40}
+        glowIntensity={1}
+        coneSpread={25}
+        animated={false}
+        colors={["#c084fc", "#f472b6", "#38bdf8"]}
+        className="w-full max-w-3xl mt-6 shadow-2xl"
+      >
+        <div className="w-full p-5 sm:p-6 text-white relative">
+          {/* Multiline Textarea Input */}
+          <div className="relative mb-3">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -528,7 +541,8 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
             <span>{errorMessage}</span>
           </div>
         )}
-      </div>
+        </div>
+      </BorderGlow>
 
       {/* 4. Minimal Telemetry / Status Line beneath the Input Card */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 mt-4 text-[11px] font-mono text-slate-500 text-center">
