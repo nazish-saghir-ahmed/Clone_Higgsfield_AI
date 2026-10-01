@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, Wand2, Zap, Camera, Car, Building2, ArrowRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, Wand2, Zap, Camera, Car, Building2, ArrowRight } from "lucide-react";
 
 export interface ShowcaseSlide {
   id: string;
@@ -49,17 +49,13 @@ export const SHOWCASE_SLIDES: ShowcaseSlide[] = [
 
 interface CinematicImageHeroProps {
   onUsePrompt?: (promptText: string) => void;
-  onScrollToStudio?: () => void;
 }
 
 export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
   onUsePrompt,
-  onScrollToStudio,
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Touch swipe support
   const touchStartX = useRef(0);
@@ -73,40 +69,15 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
     setCurrentSlide((prev) => (prev - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length);
   }, []);
 
-  // Keyboard navigation & Reduced Motion
+  // Keyboard navigation
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleMotionChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", handleMotionChange);
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") prevSlide();
       if (e.key === "ArrowRight") nextSlide();
     };
 
     window.addEventListener("keydown", handleKeyDown);
-
-    // Scroll listener using requestAnimationFrame
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleMotionChange);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nextSlide, prevSlide]);
 
   // Auto-advance carousel every 7 seconds when not hovered
@@ -135,27 +106,7 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
     }
   };
 
-  // Scroll transition math (0 to 1 over first 450px)
-  const maxScroll = 450;
-  const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
-
-  const translateY = prefersReducedMotion ? 0 : progress * -130;
-  const scale = prefersReducedMotion ? 1 : 1 - progress * 0.05;
-  const opacity = prefersReducedMotion ? 1 : Math.max(0, 1 - progress * 1.15);
-  const blur = prefersReducedMotion ? 0 : progress * 8;
-
   const activeSlideData = SHOWCASE_SLIDES[currentSlide];
-
-  const handleScrollClick = () => {
-    if (onScrollToStudio) {
-      onScrollToStudio();
-    } else {
-      window.scrollTo({
-        top: Math.min(window.innerHeight * 0.85, 680),
-        behavior: "smooth",
-      });
-    }
-  };
 
   const handleLoadCurrentPrompt = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -165,48 +116,30 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
   };
 
   return (
-    <section
-      className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-1 sm:pt-4 pb-12 select-none"
-      style={{
-        minHeight: "calc(88vh - 64px)",
-      }}
-    >
-      {/* 1. Global Ambient Gradient Atmospheres */}
-      <div
-        className="absolute -top-12 left-1/2 -translate-x-1/2 w-[98vw] max-w-7xl h-[550px] bg-gradient-to-b from-cyan-500/15 via-indigo-600/10 to-transparent blur-3xl pointer-events-none -z-10 transition-opacity duration-300"
-        style={{
-          opacity: Math.max(0, 1 - progress * 1.3),
-        }}
-      />
-      <div
-        className="absolute top-1/3 left-1/4 w-[400px] h-[350px] bg-cyan-500/[0.07] blur-[120px] rounded-full pointer-events-none -z-10"
-        style={{
-          opacity: Math.max(0, 1 - progress * 1.3),
-        }}
-      />
-      <div
-        className="absolute top-1/3 right-1/4 w-[400px] h-[350px] bg-purple-600/[0.07] blur-[120px] rounded-full pointer-events-none -z-10"
-        style={{
-          opacity: Math.max(0, 1 - progress * 1.3),
-        }}
-      />
+    <section className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-6 pb-6 select-none animate-fadeIn">
+      {/* Section Header */}
+      <div className="w-full max-w-6xl px-4 sm:px-6 mb-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-white/[0.06] pb-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-accent-cyan mb-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Neural Synthesis Benchmarks</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            Visual Showcase & Curated Archetypes
+          </h2>
+        </div>
+        <p className="text-xs text-slate-400 font-mono">
+          Slide or swipe to explore verified latent styles
+        </p>
+      </div>
 
-      {/* 2. Side Edge Soft Vignettes to Seamlessly Blend Peeking Slides */}
-      <div className="absolute top-0 bottom-0 left-0 w-12 sm:w-28 bg-gradient-to-r from-[#050609] via-[#050609]/70 to-transparent pointer-events-none z-20" />
-      <div className="absolute top-0 bottom-0 right-0 w-16 sm:w-40 bg-gradient-to-l from-[#050609] via-[#050609]/80 to-transparent pointer-events-none z-20" />
+      {/* Side Edge Soft Vignettes to Seamlessly Blend Peeking Slides */}
+      <div className="absolute top-16 bottom-0 left-0 w-12 sm:w-28 bg-gradient-to-r from-[#050609] via-[#050609]/70 to-transparent pointer-events-none z-20" />
+      <div className="absolute top-16 bottom-0 right-0 w-16 sm:w-40 bg-gradient-to-l from-[#050609] via-[#050609]/80 to-transparent pointer-events-none z-20" />
 
-      {/* 3. Bottom Atmospheric Gradient Bleed merging Hero into the Page */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050609] via-[#050609]/70 to-transparent pointer-events-none z-20" />
-
-      {/* 4. Ultra-Wide Panoramic Multi-Frame Showcase Track */}
+      {/* Ultra-Wide Panoramic Multi-Frame Showcase Track */}
       <div
-        className="w-full relative transition-transform duration-75 ease-out will-change-transform z-10"
-        style={{
-          transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-          opacity: opacity,
-          filter: blur > 0.5 ? `blur(${blur}px)` : "none",
-          pointerEvents: opacity < 0.2 ? "none" : "auto",
-        }}
+        className="w-full relative z-10"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -222,8 +155,6 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
         >
           {SHOWCASE_SLIDES.map((slide, idx) => {
             const isActive = idx === currentSlide;
-            const isNext = idx === (currentSlide + 1) % SHOWCASE_SLIDES.length;
-            const isPrev = idx === (currentSlide - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length;
 
             return (
               <div
@@ -255,7 +186,7 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
                     <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-indigo-500/10 opacity-70 pointer-events-none" />
                   )}
 
-                  <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/10] sm:aspect-[21/10] md:aspect-[2.25/1] max-h-[70vh] flex items-center justify-center">
+                  <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/10] sm:aspect-[21/10] md:aspect-[2.25/1] max-h-[65vh] flex items-center justify-center">
                     {/* The Visual Artwork */}
                     <img
                       src={slide.imageSrc}
@@ -379,23 +310,6 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
               }`}
             />
           ))}
-        </div>
-      </div>
-
-      {/* 5. Stage 1 Scroll Prompt Indicator */}
-      <div
-        className="mt-4 sm:mt-6 flex flex-col items-center gap-2 cursor-pointer group transition-opacity duration-300 z-30"
-        style={{
-          opacity: Math.max(0, 1 - progress * 2),
-          pointerEvents: progress > 0.4 ? "none" : "auto",
-        }}
-        onClick={handleScrollClick}
-      >
-        <span className="text-[11px] font-mono tracking-widest text-slate-400 group-hover:text-cyan-400 uppercase transition-colors flex items-center gap-1.5">
-          <span>Scroll to direct neural studio</span>
-        </span>
-        <div className="w-6 h-6 rounded-full border border-white/10 group-hover:border-cyan-400/40 bg-white/[0.02] flex items-center justify-center transition-all animate-bounce">
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
         </div>
       </div>
     </section>

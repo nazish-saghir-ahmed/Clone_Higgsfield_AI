@@ -1,37 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Play, Pause, RefreshCw, Zap, Film, Compass, Wand2, Sparkles, ChevronDown, Video, Sliders } from "lucide-react";
+import { Play, Pause, Zap, Sparkles, Video, Film } from "lucide-react";
 
 interface CinematicVideoHeroProps {
   onUsePrompt?: (promptText: string) => void;
-  onScrollToStudio?: () => void;
 }
 
 export const CinematicVideoHero: React.FC<CinematicVideoHeroProps> = ({
   onUsePrompt,
-  onScrollToStudio,
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [playProgress, setPlayProgress] = useState(35);
-  const [scrollY, setScrollY] = useState(0);
 
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Timeline playback simulation
   useEffect(() => {
     if (!isPlaying) return;
     const interval = setInterval(() => {
@@ -40,32 +21,30 @@ export const CinematicVideoHero: React.FC<CinematicVideoHeroProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const maxScroll = 450;
-  const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
-  const translateY = progress * -120;
-  const scale = 1 - progress * 0.05;
-  const opacity = Math.max(0, 1 - progress * 1.15);
-
   const videoPrompt = "Cinematic high-speed motion sequence of a futuristic neon cyberpunk metropolis at night, wet reflective streets with glowing cyan light trails, cinematic motion blur, anamorphic blue lens flare, Arri Alexa LF 8k";
 
   return (
-    <section className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-1 sm:pt-4 pb-12 select-none">
-      {/* Background Ambient Glow */}
-      <div
-        className="absolute -top-12 left-1/2 -translate-x-1/2 w-[98vw] max-w-7xl h-[550px] bg-gradient-to-b from-cyan-500/15 via-indigo-600/10 to-transparent blur-3xl pointer-events-none -z-10"
-        style={{ opacity: Math.max(0, 1 - progress * 1.3) }}
-      />
+    <section className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-6 pb-6 select-none animate-fadeIn">
+      {/* Section Header */}
+      <div className="w-full max-w-6xl px-4 sm:px-6 mb-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-white/[0.06] pb-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-accent-cyan mb-1.5">
+            <Video className="w-3.5 h-3.5" />
+            <span>Temporal Flow Benchmarks</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            Video Showcase & Motion Dynamics
+          </h2>
+        </div>
+        <p className="text-xs text-slate-400 font-mono">
+          Interactive temporal playback & motion vector simulation
+        </p>
+      </div>
 
       {/* Hero Showcase Container */}
-      <div
-        className="w-full max-w-6xl px-3 sm:px-6 transition-transform duration-75 ease-out will-change-transform z-10"
-        style={{
-          transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-          opacity: opacity,
-        }}
-      >
+      <div className="w-full max-w-6xl px-3 sm:px-6 z-10">
         <div className="relative rounded-3xl p-[1px] bg-gradient-to-b from-white/[0.22] via-white/[0.08] to-white/[0.02] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden">
-          <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/9] sm:aspect-[21/10] md:aspect-[2.35/1] max-h-[68vh] flex items-center justify-center">
+          <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/9] sm:aspect-[21/10] md:aspect-[2.35/1] max-h-[65vh] flex items-center justify-center">
             
             {/* Cinematic Motion Image */}
             <img
@@ -143,25 +122,6 @@ export const CinematicVideoHero: React.FC<CinematicVideoHeroProps> = ({
             </div>
 
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Down Cue */}
-      <div
-        className="mt-4 sm:mt-6 flex flex-col items-center gap-2 cursor-pointer group transition-opacity duration-300 z-30"
-        style={{
-          opacity: Math.max(0, 1 - progress * 2),
-        }}
-        onClick={() => {
-          if (onScrollToStudio) onScrollToStudio();
-          else window.scrollTo({ top: 650, behavior: "smooth" });
-        }}
-      >
-        <span className="text-[11px] font-mono tracking-widest text-slate-400 group-hover:text-cyan-400 uppercase transition-colors">
-          Scroll to direct video studio
-        </span>
-        <div className="w-6 h-6 rounded-full border border-white/10 group-hover:border-cyan-400/40 bg-white/[0.02] flex items-center justify-center animate-bounce">
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
         </div>
       </div>
     </section>

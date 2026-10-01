@@ -1,56 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Clapperboard, Film, Sparkles, ChevronDown, Zap, Compass, Sliders, Eye } from "lucide-react";
+import React from "react";
+import { Clapperboard, Film, Sparkles, Zap } from "lucide-react";
 
 interface CinematicCinemaHeroProps {
   onUsePrompt?: (promptText: string) => void;
-  onScrollToStudio?: () => void;
 }
 
 export const CinematicCinemaHero: React.FC<CinematicCinemaHeroProps> = ({
   onUsePrompt,
-  onScrollToStudio,
 }) => {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const maxScroll = 450;
-  const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
-  const translateY = progress * -120;
-  const scale = 1 - progress * 0.05;
-  const opacity = Math.max(0, 1 - progress * 1.15);
-
   const cinemaPrompt = "Ultra widescreen 2.39:1 anamorphic movie frame of an astronaut discovering a colossal obsidian alien structure in a misty desert at golden hour dusk, Panavision lens flare, 35mm grain";
 
   return (
-    <section className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-1 sm:pt-4 pb-12 select-none">
-      <div
-        className="absolute -top-12 left-1/2 -translate-x-1/2 w-[98vw] max-w-7xl h-[550px] bg-gradient-to-b from-amber-500/10 via-cyan-600/10 to-transparent blur-3xl pointer-events-none -z-10"
-        style={{ opacity: Math.max(0, 1 - progress * 1.3) }}
-      />
+    <section className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-6 pb-6 select-none animate-fadeIn">
+      {/* Section Header */}
+      <div className="w-full max-w-6xl px-4 sm:px-6 mb-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-white/[0.06] pb-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400 mb-1.5">
+            <Clapperboard className="w-3.5 h-3.5" />
+            <span>Virtual Optical Rig Benchmarks</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            Cinematic Directing & Anamorphic Optics
+          </h2>
+        </div>
+        <p className="text-xs text-slate-400 font-mono">
+          2.39:1 Widescreen composition & virtual lens simulation
+        </p>
+      </div>
 
-      <div
-        className="w-full max-w-6xl px-3 sm:px-6 transition-transform duration-75 ease-out will-change-transform z-10"
-        style={{
-          transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-          opacity: opacity,
-        }}
-      >
+      <div className="w-full max-w-6xl px-3 sm:px-6 z-10">
         <div className="relative rounded-3xl p-[1px] bg-gradient-to-b from-white/[0.25] via-white/[0.08] to-white/[0.02] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden">
           {/* Anamorphic 2.39:1 Aspect Ratio Box */}
           <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[2.39/1] max-h-[65vh] flex items-center justify-center">
@@ -84,20 +64,6 @@ export const CinematicCinemaHero: React.FC<CinematicCinemaHeroProps> = ({
               </span>
             </div>
 
-            {/* Storyboard Shot Overlay Badges */}
-            <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 right-6 flex-col gap-2 bg-black/60 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
-              <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-wider">Multi-Shot Rig</span>
-              <div className="text-[11px] font-mono text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400" /> Shot 1: Establishing
-              </div>
-              <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-white/20" /> Shot 2: Medium Pan
-              </div>
-              <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-white/20" /> Shot 3: Close-up
-              </div>
-            </div>
-
             {/* Bottom Caption & Director Action */}
             <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-6 right-3 sm:right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <p className="text-xs text-slate-200 line-clamp-1 max-w-xl">
@@ -116,22 +82,6 @@ export const CinematicCinemaHero: React.FC<CinematicCinemaHeroProps> = ({
             </div>
 
           </div>
-        </div>
-      </div>
-
-      <div
-        className="mt-4 sm:mt-6 flex flex-col items-center gap-2 cursor-pointer group transition-opacity duration-300 z-30"
-        style={{ opacity: Math.max(0, 1 - progress * 2) }}
-        onClick={() => {
-          if (onScrollToStudio) onScrollToStudio();
-          else window.scrollTo({ top: 650, behavior: "smooth" });
-        }}
-      >
-        <span className="text-[11px] font-mono tracking-widest text-slate-400 group-hover:text-cyan-400 uppercase transition-colors">
-          Scroll to direct cinema studio
-        </span>
-        <div className="w-6 h-6 rounded-full border border-white/10 group-hover:border-cyan-400/40 bg-white/[0.02] flex items-center justify-center animate-bounce">
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
         </div>
       </div>
     </section>
