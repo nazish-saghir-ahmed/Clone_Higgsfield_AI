@@ -250,37 +250,42 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
         />
       )}
 
-      {/* Stage 3: Product Typography & Synthesis Studio */}
-      <div ref={studioCardRef} className="w-full flex flex-col items-center pt-4 sm:pt-8 scroll-mt-20">
+      {/* Seamless Transition Light Bridge between Hero and Studio */}
+      {studioType === "image" && (
+        <div className="w-full h-16 sm:h-24 bg-gradient-to-b from-transparent via-cyan-500/[0.03] to-transparent pointer-events-none -my-4" />
+      )}
+
+      {/* Stage 3: Product Typography & Synthesis Studio Section */}
+      <div ref={studioCardRef} className="w-full flex flex-col items-center pt-8 sm:pt-16 pb-6 scroll-mt-16">
         {/* 1. Top Futuristic Engine Pill Badge */}
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] shadow-sm mb-6 backdrop-blur-md">
-        <span className="relative flex w-2 h-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
-          <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
-        </span>
-        <span className="text-[11px] font-mono tracking-widest text-slate-300 uppercase font-medium">
-          {engineBadge}
-        </span>
-      </div>
-
-      {/* 2. Large Centered Hero Title (80-110px with Serif Italic Emphasis) */}
-      <div className="text-center max-w-4xl mx-auto mb-4 select-none">
-        <h1 className="text-5xl sm:text-7xl lg:text-[86px] font-extrabold tracking-tight text-white leading-[1.05] font-sans">
-          {headlineMain}
-          <br className="hidden sm:inline" />
-          <span className="font-serif italic font-normal text-slate-100 tracking-normal px-2">
-            {headlineEmphasis}
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.1] shadow-lg mb-6 backdrop-blur-md">
+          <span className="relative flex w-2 h-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
+            <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
           </span>
-          {headlineSuffix}
-        </h1>
+          <span className="text-[11px] font-mono tracking-widest text-slate-200 uppercase font-medium">
+            {engineBadge}
+          </span>
+        </div>
 
-        {/* Subtitle */}
-        <p className="mt-4 text-sm sm:text-base text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
-          {subtitle}
-        </p>
-      </div>
+        {/* 2. Large Full-Width Section Title (with Serif Italic Emphasis) */}
+        <div className="text-center max-w-5xl mx-auto mb-6 px-4 select-none">
+          <h1 className="text-5xl sm:text-7xl lg:text-[84px] font-extrabold tracking-tight text-white leading-[1.08] font-sans">
+            {headlineMain}
+            <br className="hidden sm:inline" />
+            <span className="font-serif italic font-normal text-slate-100 tracking-normal px-2">
+              {headlineEmphasis}
+            </span>
+            {headlineSuffix}
+          </h1>
 
-      {/* 3. Main Focused Creation / Input Panel */}
+          {/* Subtitle */}
+          <p className="mt-5 text-sm sm:text-base md:text-lg text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
+            {subtitle}
+          </p>
+        </div>
+
+        {/* 3. Main Focused Creation / Input Panel */}
       <BorderGlow
         edgeSensitivity={30}
         glowColor="40 80 80"

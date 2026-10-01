@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, Wand2, Zap, Camera, Car, Building2 } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, Wand2, Zap, Camera, Car, Building2, ArrowRight } from "lucide-react";
 
 export interface ShowcaseSlide {
   id: string;
@@ -14,7 +14,7 @@ export interface ShowcaseSlide {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const SHOWCASE_SLIDES: ShowcaseSlide[] = [
+export const SHOWCASE_SLIDES: ShowcaseSlide[] = [
   {
     id: "portrait",
     category: "Editorial Fashion Portraiture",
@@ -109,12 +109,12 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
     };
   }, [nextSlide, prevSlide]);
 
-  // Auto-advance carousel every 6 seconds when not hovered
+  // Auto-advance carousel every 7 seconds when not hovered
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
       nextSlide();
-    }, 6000);
+    }, 7000);
     return () => clearInterval(interval);
   }, [isPaused, nextSlide]);
 
@@ -129,7 +129,7 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
 
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
+    if (Math.abs(diff) > 40) {
       if (diff > 0) nextSlide();
       else prevSlide();
     }
@@ -139,7 +139,7 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
   const maxScroll = 450;
   const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
 
-  const translateY = prefersReducedMotion ? 0 : progress * -120;
+  const translateY = prefersReducedMotion ? 0 : progress * -130;
   const scale = prefersReducedMotion ? 1 : 1 - progress * 0.05;
   const opacity = prefersReducedMotion ? 1 : Math.max(0, 1 - progress * 1.15);
   const blur = prefersReducedMotion ? 0 : progress * 8;
@@ -151,36 +151,56 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
       onScrollToStudio();
     } else {
       window.scrollTo({
-        top: Math.min(window.innerHeight * 0.8, 650),
+        top: Math.min(window.innerHeight * 0.85, 680),
         behavior: "smooth",
       });
     }
   };
 
-  const handleLoadCurrentPrompt = () => {
+  const handleLoadCurrentPrompt = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (onUsePrompt) {
       onUsePrompt(activeSlideData.prompt);
     }
   };
 
   return (
-    <div
-      className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-1 sm:pt-3 pb-8 select-none"
+    <section
+      className="relative w-full flex flex-col items-center justify-start overflow-hidden pt-1 sm:pt-4 pb-12 select-none"
       style={{
         minHeight: "calc(88vh - 64px)",
       }}
     >
-      {/* Dynamic Background Ambient Backlight */}
+      {/* 1. Global Ambient Gradient Atmospheres */}
       <div
-        className="absolute -top-10 left-1/2 -translate-x-1/2 w-[95vw] max-w-6xl h-[500px] bg-gradient-to-b from-cyan-500/15 via-indigo-600/10 to-transparent blur-3xl pointer-events-none -z-10 transition-opacity duration-300"
+        className="absolute -top-12 left-1/2 -translate-x-1/2 w-[98vw] max-w-7xl h-[550px] bg-gradient-to-b from-cyan-500/15 via-indigo-600/10 to-transparent blur-3xl pointer-events-none -z-10 transition-opacity duration-300"
+        style={{
+          opacity: Math.max(0, 1 - progress * 1.3),
+        }}
+      />
+      <div
+        className="absolute top-1/3 left-1/4 w-[400px] h-[350px] bg-cyan-500/[0.07] blur-[120px] rounded-full pointer-events-none -z-10"
+        style={{
+          opacity: Math.max(0, 1 - progress * 1.3),
+        }}
+      />
+      <div
+        className="absolute top-1/3 right-1/4 w-[400px] h-[350px] bg-purple-600/[0.07] blur-[120px] rounded-full pointer-events-none -z-10"
         style={{
           opacity: Math.max(0, 1 - progress * 1.3),
         }}
       />
 
-      {/* Expanded Hero Showcase Container (Stage 1 & Stage 2 Transition) */}
+      {/* 2. Side Edge Soft Vignettes to Seamlessly Blend Peeking Slides */}
+      <div className="absolute top-0 bottom-0 left-0 w-12 sm:w-28 bg-gradient-to-r from-[#050609] via-[#050609]/70 to-transparent pointer-events-none z-20" />
+      <div className="absolute top-0 bottom-0 right-0 w-16 sm:w-40 bg-gradient-to-l from-[#050609] via-[#050609]/80 to-transparent pointer-events-none z-20" />
+
+      {/* 3. Bottom Atmospheric Gradient Bleed merging Hero into the Page */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050609] via-[#050609]/70 to-transparent pointer-events-none z-20" />
+
+      {/* 4. Ultra-Wide Panoramic Multi-Frame Showcase Track */}
       <div
-        className="w-full max-w-7xl px-2 sm:px-4 lg:px-6 transition-transform duration-75 ease-out will-change-transform"
+        className="w-full relative transition-transform duration-75 ease-out will-change-transform z-10"
         style={{
           transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
           opacity: opacity,
@@ -193,129 +213,178 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Full-bleed Cinematic Frame Shell */}
-        <div className="relative group rounded-3xl p-[1px] bg-gradient-to-b from-white/[0.22] via-white/[0.08] to-white/[0.02] shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden">
-          
-          {/* Main Visual Slider Canvas */}
-          <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/10] sm:aspect-[21/10] md:aspect-[2.35/1] max-h-[72vh] flex items-center justify-center">
-            
-            {/* Horizontal Slide Images */}
-            <div
-              className="flex w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
-              style={{
-                transform: `translateX(-${currentSlide * 100}%)`,
-              }}
-            >
-              {SHOWCASE_SLIDES.map((slide, idx) => (
-                <div key={slide.id} className="w-full h-full flex-shrink-0 relative overflow-hidden bg-black">
-                  <img
-                    src={slide.imageSrc}
-                    alt={slide.title}
-                    className={`w-full h-full object-cover object-center transition-transform duration-1000 ease-out ${
-                      idx === currentSlide ? "scale-100" : "scale-105"
-                    }`}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                  />
-                  
-                  {/* Cinematic Edge & Base Vignettes for High Contrast UI Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050609]/95 via-transparent to-[#050609]/40 pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#050609]/60 via-transparent to-[#050609]/60 pointer-events-none" />
-                </div>
-              ))}
-            </div>
+        {/* Continuous Panoramic Track */}
+        <div
+          className="flex items-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] px-4 sm:px-8"
+          style={{
+            transform: `translateX(calc(50vw - (min(76vw, 1020px) / 2) - ${currentSlide} * (min(76vw, 1020px) + 24px)))`,
+          }}
+        >
+          {SHOWCASE_SLIDES.map((slide, idx) => {
+            const isActive = idx === currentSlide;
+            const isNext = idx === (currentSlide + 1) % SHOWCASE_SLIDES.length;
+            const isPrev = idx === (currentSlide - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length;
 
-            {/* Top-Left Live HUD Badge */}
-            <div className="absolute top-3 sm:top-5 left-3 sm:left-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#050609]/80 backdrop-blur-md border border-white/[0.12] shadow-xl">
-              <span className="relative flex w-2 h-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-80" />
-                <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono font-medium tracking-wider text-slate-200 uppercase flex items-center gap-1.5">
-                <span>{activeSlideData.badge}</span>
-                <span className="text-slate-500">/</span>
-                <span className="text-accent-cyan">{activeSlideData.category}</span>
-              </span>
-            </div>
-
-            {/* Top-Right Technical Specs Tag */}
-            <div className="hidden sm:flex absolute top-5 right-6 items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#050609]/80 backdrop-blur-md border border-white/[0.12] shadow-xl">
-              <Zap className="w-3 h-3 text-accent-cyan" />
-              <span className="text-[11px] font-mono text-slate-300 tracking-wider">
-                {activeSlideData.techSpecs}
-              </span>
-            </div>
-
-            {/* Navigation Chevron Left */}
-            <button
-              type="button"
-              onClick={prevSlide}
-              aria-label="Previous showcase visual"
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-slate-300 hover:text-white border border-white/10 hover:border-white/25 backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 shadow-xl"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            {/* Navigation Chevron Right */}
-            <button
-              type="button"
-              onClick={nextSlide}
-              aria-label="Next showcase visual"
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-slate-300 hover:text-white border border-white/10 hover:border-white/25 backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 shadow-xl"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-
-            {/* Bottom Showcase Caption & Action Bar */}
-            <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-6 right-3 sm:right-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
-              <div className="max-w-2xl bg-black/40 backdrop-blur-sm p-2 sm:p-3 rounded-2xl border border-white/[0.06]">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-cyan-400 mb-1">
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>Verified Prompt Archetype</span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-200 font-sans font-normal line-clamp-2 leading-relaxed drop-shadow-md">
-                  &ldquo;{activeSlideData.prompt}&rdquo;
-                </p>
-              </div>
-
-              {/* Action Buttons & Slide Dots */}
-              <div className="flex items-center gap-3 self-end sm:self-auto">
-                {onUsePrompt && (
-                  <button
-                    type="button"
-                    onClick={handleLoadCurrentPrompt}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:to-indigo-500/30 active:scale-95 border border-cyan-400/40 backdrop-blur-md text-xs font-semibold text-white shadow-lg transition-all"
-                    title="Load this verified prompt into the studio"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-accent-cyan" />
-                    <span>Try This Prompt</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Carousel Navigation Indicator Dots */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10">
-              {SHOWCASE_SLIDES.map((slide, idx) => (
-                <button
-                  key={slide.id}
-                  onClick={() => setCurrentSlide(idx)}
-                  aria-label={`Jump to ${slide.category}`}
-                  className={`transition-all duration-300 rounded-full ${
-                    idx === currentSlide
-                      ? "w-7 h-2 bg-gradient-to-r from-accent-cyan to-indigo-400 shadow-[0_0_8px_rgba(0,219,233,0.5)]"
-                      : "w-2 h-2 bg-white/30 hover:bg-white/60"
+            return (
+              <div
+                key={slide.id}
+                onClick={() => {
+                  if (!isActive) setCurrentSlide(idx);
+                }}
+                className={`flex-shrink-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isActive ? "cursor-default" : "cursor-pointer hover:opacity-85"
+                }`}
+                style={{
+                  width: "min(76vw, 1020px)",
+                  marginRight: "24px",
+                  opacity: isActive ? 1 : 0.45,
+                  transform: isActive ? "scale(1)" : "scale(0.96)",
+                  filter: isActive ? "none" : "saturate(0.85) brightness(0.7)",
+                }}
+              >
+                {/* Visual Card Frame */}
+                <div
+                  className={`relative rounded-3xl p-[1px] transition-all duration-500 overflow-hidden ${
+                    isActive
+                      ? "bg-gradient-to-b from-white/[0.25] via-white/[0.08] to-white/[0.02] shadow-[0_25px_80px_rgba(0,0,0,0.95)]"
+                      : "bg-white/[0.04] shadow-lg border border-white/[0.04]"
                   }`}
-                />
-              ))}
-            </div>
+                >
+                  {/* Active Highlight Radial Glow */}
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-indigo-500/10 opacity-70 pointer-events-none" />
+                  )}
 
-          </div>
+                  <div className="relative rounded-[23px] overflow-hidden bg-[#06080d] aspect-[16/10] sm:aspect-[21/10] md:aspect-[2.25/1] max-h-[70vh] flex items-center justify-center">
+                    {/* The Visual Artwork */}
+                    <img
+                      src={slide.imageSrc}
+                      alt={slide.title}
+                      className={`w-full h-full object-cover object-center transition-transform duration-1000 ease-out ${
+                        isActive ? "scale-100" : "scale-105"
+                      }`}
+                      loading={idx === 0 ? "eager" : "lazy"}
+                    />
+
+                    {/* Dark Cinematic Vignettes for Optimal Contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050609]/95 via-transparent to-[#050609]/35 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#050609]/65 via-transparent to-[#050609]/65 pointer-events-none" />
+
+                    {/* Active HUD Overlays */}
+                    {isActive && (
+                      <>
+                        {/* Top-Left Live HUD Badge */}
+                        <div className="absolute top-3 sm:top-5 left-3 sm:left-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#050609]/80 backdrop-blur-md border border-white/[0.12] shadow-xl">
+                          <span className="relative flex w-2 h-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-80" />
+                            <span className="relative inline-flex rounded-full w-2 h-2 bg-accent-cyan" />
+                          </span>
+                          <span className="text-[10px] sm:text-[11px] font-mono font-medium tracking-wider text-slate-200 uppercase flex items-center gap-1.5">
+                            <span>{slide.badge}</span>
+                            <span className="text-slate-500">/</span>
+                            <span className="text-accent-cyan">{slide.category}</span>
+                          </span>
+                        </div>
+
+                        {/* Top-Right Technical Specs Tag */}
+                        <div className="hidden sm:flex absolute top-5 right-6 items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#050609]/80 backdrop-blur-md border border-white/[0.12] shadow-xl">
+                          <Zap className="w-3 h-3 text-accent-cyan" />
+                          <span className="text-[11px] font-mono text-slate-300 tracking-wider">
+                            {slide.techSpecs}
+                          </span>
+                        </div>
+
+                        {/* Navigation Chevron Left */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            prevSlide();
+                          }}
+                          aria-label="Previous visual"
+                          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-slate-300 hover:text-white border border-white/10 hover:border-white/25 backdrop-blur-md flex items-center justify-center transition-all opacity-85 hover:opacity-100 hover:scale-105 active:scale-95 shadow-xl"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+
+                        {/* Navigation Chevron Right */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            nextSlide();
+                          }}
+                          aria-label="Next visual"
+                          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-slate-300 hover:text-white border border-white/10 hover:border-white/25 backdrop-blur-md flex items-center justify-center transition-all opacity-85 hover:opacity-100 hover:scale-105 active:scale-95 shadow-xl"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+
+                        {/* Bottom Caption & Prompt Trigger */}
+                        <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-6 right-3 sm:right-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
+                          <div className="max-w-2xl bg-black/40 backdrop-blur-sm p-2.5 sm:p-3.5 rounded-2xl border border-white/[0.06]">
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-cyan-400 mb-1">
+                              <Wand2 className="w-3.5 h-3.5" />
+                              <span>Verified Prompt Archetype</span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-200 font-sans font-normal line-clamp-2 leading-relaxed drop-shadow-md">
+                              &ldquo;{slide.prompt}&rdquo;
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3 self-end sm:self-auto">
+                            {onUsePrompt && (
+                              <button
+                                type="button"
+                                onClick={handleLoadCurrentPrompt}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:to-indigo-500/30 active:scale-95 border border-cyan-400/40 backdrop-blur-md text-xs font-semibold text-white shadow-lg transition-all"
+                                title="Load this prompt into the studio input"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-accent-cyan" />
+                                <span>Try This Prompt</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Inactive Peeking Slide Teaser Tag */}
+                    {!isActive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-transparent transition-colors">
+                        <div className="px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-[11px] font-mono text-slate-300 flex items-center gap-2 shadow-xl">
+                          <span>{slide.category}</span>
+                          <ArrowRight className="w-3 h-3 text-cyan-400" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Carousel Pagination Progress Indicator */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {SHOWCASE_SLIDES.map((slide, idx) => (
+            <button
+              key={slide.id}
+              onClick={() => setCurrentSlide(idx)}
+              aria-label={`Jump to ${slide.category}`}
+              className={`transition-all duration-300 rounded-full ${
+                idx === currentSlide
+                  ? "w-8 h-2 bg-gradient-to-r from-accent-cyan to-indigo-400 shadow-[0_0_8px_rgba(0,219,233,0.5)]"
+                  : "w-2.5 h-2.5 bg-white/20 hover:bg-white/50"
+              }`}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Stage 1 Scroll Prompt Indicator */}
+      {/* 5. Stage 1 Scroll Prompt Indicator */}
       <div
-        className="mt-3 sm:mt-5 flex flex-col items-center gap-2 cursor-pointer group transition-opacity duration-300"
+        className="mt-4 sm:mt-6 flex flex-col items-center gap-2 cursor-pointer group transition-opacity duration-300 z-30"
         style={{
           opacity: Math.max(0, 1 - progress * 2),
           pointerEvents: progress > 0.4 ? "none" : "auto",
@@ -329,6 +398,6 @@ export const CinematicImageHero: React.FC<CinematicImageHeroProps> = ({
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
         </div>
       </div>
-    </div>
+    </section>
   );
 };
