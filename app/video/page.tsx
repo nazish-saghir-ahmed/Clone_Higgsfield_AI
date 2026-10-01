@@ -12,8 +12,8 @@ export default function VideoStudioPage() {
       studioType="video"
       engineBadge="AETHER TEMPORAL ENGINE V3.4"
       headlineMain="Video Studio —"
-      headlineEmphasis="future"
-      headlineSuffix=" of motion"
+      headlineEmphasis="motion,"
+      headlineSuffix=" imagined."
       subtitle="Generate, extend, interpolate, and direct temporal diffusion with precise six-axis camera trajectories."
       placeholderText="Describe the video scene or camera trajectory... (e.g., Drone sweep over neon cyberpunk metropolis at dusk)"
       models={combinedVideoModels}

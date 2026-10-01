@@ -9,10 +9,10 @@ export default function LipSyncStudioPage() {
     <UnifiedStudioStage
       studioType="lipsync"
       engineBadge="AETHER ACOUSTIC VISEME ENGINE V2.2"
-      headlineMain="Lip Sync Studio —"
-      headlineEmphasis="future"
-      headlineSuffix=" of voice"
-      subtitle="Animate portrait faces and re-dub cinema videos with natural phoneme-accurate speech synchronization."
+      headlineMain="Lip Sync —"
+      headlineEmphasis="give every frame"
+      headlineSuffix=" a voice."
+      subtitle="Synchronize hyper-realistic facial phonemes and dynamic micro-expressions with zero head-drift artifacts."
       placeholderText="Select or upload your speech track (.mp3/.wav) and visual target below to synchronize speech..."
       models={LIPSYNC_MODELS}
       defaultModelId="infinite-talk-720p"

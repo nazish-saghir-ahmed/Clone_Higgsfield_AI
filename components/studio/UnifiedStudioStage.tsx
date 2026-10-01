@@ -9,6 +9,11 @@ import { MotionBrushCanvas } from "@/components/canvas/MotionBrushCanvas";
 import { LightboxModal } from "@/components/shared/LightboxModal";
 import BorderGlow from "@/components/BorderGlow";
 import { CinematicImageHero } from "@/components/hero/CinematicImageHero";
+import { CinematicVideoHero } from "@/components/hero/CinematicVideoHero";
+import { CinematicLipSyncHero } from "@/components/hero/CinematicLipSyncHero";
+import { CinematicCinemaHero } from "@/components/hero/CinematicCinemaHero";
+import { ImageInspirationGallery } from "@/components/gallery/ImageInspirationGallery";
+import { StoryboardTimeline } from "@/components/cinema/StoryboardTimeline";
 import { STYLE_PRESETS, applyStylePreset, StylePreset } from "@/lib/prompt-compiler";
 import { submitGenerativeJob, executePollingLoop } from "@/lib/api-client";
 import { normalizeOutputUrl } from "@/lib/url-normalizer";
@@ -237,7 +242,7 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
 
   return (
     <div className="relative w-full flex flex-col items-center pt-2 sm:pt-4 pb-20 px-4 sm:px-6 hero-radial-glow overflow-x-hidden">
-      {/* Stage 1 & 2: Large Cinematic Hero AI Showcase Carousel for Image Studio */}
+      {/* Stage 1 & 2: Dedicated Cinematic Hero Showcase for Each Studio */}
       {studioType === "image" && (
         <CinematicImageHero
           onUsePrompt={(loadedPrompt) => {
@@ -249,11 +254,42 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
           }}
         />
       )}
+      {studioType === "video" && (
+        <CinematicVideoHero
+          onUsePrompt={(loadedPrompt) => {
+            setPrompt(loadedPrompt);
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+          onScrollToStudio={() => {
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
+      {studioType === "lipsync" && (
+        <CinematicLipSyncHero
+          onUsePrompt={(loadedPrompt) => {
+            setPrompt(loadedPrompt);
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+          onScrollToStudio={() => {
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
+      {studioType === "cinema" && (
+        <CinematicCinemaHero
+          onUsePrompt={(loadedPrompt) => {
+            setPrompt(loadedPrompt);
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+          onScrollToStudio={() => {
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
 
       {/* Seamless Transition Light Bridge between Hero and Studio */}
-      {studioType === "image" && (
-        <div className="w-full h-16 sm:h-24 bg-gradient-to-b from-transparent via-cyan-500/[0.03] to-transparent pointer-events-none -my-4" />
-      )}
+      <div className="w-full h-16 sm:h-24 bg-gradient-to-b from-transparent via-cyan-500/[0.03] to-transparent pointer-events-none -my-4" />
 
       {/* Stage 3: Product Typography & Synthesis Studio Section */}
       <div ref={studioCardRef} className="w-full flex flex-col items-center pt-8 sm:pt-16 pb-6 scroll-mt-16">
@@ -579,7 +615,22 @@ export const UnifiedStudioStage: React.FC<UnifiedStudioStageProps> = ({
         <span className="text-slate-600">/</span>
         <span className="text-accent-cyan/90 font-medium">Ready for Synthesis</span>
       </div>
+
+      {/* Cinema Multi-Shot Storyboard Director Console */}
+      {studioType === "cinema" && (
+        <StoryboardTimeline />
+      )}
       </div>
+
+      {/* Image Studio Inspiration & Archetypes Showcase Gallery */}
+      {studioType === "image" && (
+        <ImageInspirationGallery
+          onSelectPrompt={(loadedPrompt) => {
+            setPrompt(loadedPrompt);
+            studioCardRef.current?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
 
       {/* 5. Active Output Showcase Viewport */}
       {outputUrl && (
