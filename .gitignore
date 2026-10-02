@@ -22,3 +22,8 @@ yarn-error.log*
 # System Files
 .DS_Store
 Thumbs.db
+
+# Scratch & Temporary
+files.zip
+files/
+scripts - Copy/
